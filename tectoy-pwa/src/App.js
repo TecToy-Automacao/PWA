@@ -26,6 +26,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 let printCharacteristic = null;
+let deviceG = null;
 
 function App() {
   const classes = useStyles();
@@ -43,6 +44,7 @@ function App() {
   const [message, setMessage] = useState("");
 
   function print() {
+	  if(deviceG == null){
     navigator.bluetooth
       .requestDevice({
         filters: [
@@ -56,9 +58,13 @@ function App() {
         if (device.gatt.connected) {
           device.gatt.disconnect();
         }
-        return connect(device);
+		deviceG = device;
+        return connect(deviceG);
       })
       .catch(handleError);
+	  } else {
+		  return connect(deviceG);
+	  }
   }
   function connect(device) {
     return device.gatt
@@ -115,6 +121,7 @@ function App() {
     addText(arrayText);
     console.log("sendTextData => arrayText", arrayText);
     loop(0, arrayText, device);
+	
   }
   function loop(i, arrayText, device) {
     let arrayBytes = getBytes(arrayText[i]);
@@ -141,7 +148,10 @@ function App() {
         }, 250);
       })
       .catch((error) => {
-        handleError(error, device);
+		device.gatt.disconnect();
+		if(!device.gatt.connected){
+		  connect(device).then();
+	    }
       });
   }
 
